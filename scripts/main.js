@@ -195,17 +195,49 @@ class PreviewApp {
     }
 
     openFullscreen() {
-        this.fullscreenContent.innerHTML = this.currentFormat === 'markdown' 
-            ? this.preview.innerHTML 
-            : this.htmlPreview.outerHTML;
-        
+        if (this.currentFormat === 'markdown') {
+            this.fullscreenContent.innerHTML = this.preview.innerHTML;
+            // 重新应用代码高亮
+            Prism.highlightAllUnder(this.fullscreenContent);
+        } else {
+            // HTML模式：创建新的iframe并复制内容
+            const content = this.editor.value;
+            this.fullscreenContent.innerHTML = `
+                <iframe class="html-preview" style="width: 100%; height: 100%; border: 1px solid var(--border-color); border-radius: var(--border-radius);"></iframe>
+            `;
+
+            const iframe = this.fullscreenContent.querySelector('iframe');
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            line-height: 1.6;
+                            margin: 1rem;
+                            color: #1e293b;
+                        }
+                        img { max-width: 100%; height: auto; }
+                        table { border-collapse: collapse; width: 100%; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    ${content}
+                </body>
+                </html>
+            `);
+            doc.close();
+        }
+
         this.fullscreenModal.style.display = 'block';
         document.body.style.overflow = 'hidden';
-        
-        // 重新应用代码高亮
-        if (this.currentFormat === 'markdown') {
-            Prism.highlightAllUnder(this.fullscreenContent);
-        }
     }
 
     closeFullscreen() {
